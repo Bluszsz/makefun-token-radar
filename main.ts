@@ -5,10 +5,12 @@
 // copies this repository's dashboard/ and screenshots/ to /output. Last, it writes /output/dossier.json,
 // the summary the judge reads, with the vendored make.fun library.
 //
-// The dashboard is a static page, no framework and no network: dashboard/index.html, dashboard/app.css
-// and dashboard/app.js read /output/data.js, which this program writes from the same board. A starting
-// point, not a winner: it covers the watchlist, states the model and gives every protocol a farm plan.
-// Change the model, the page or the plan; keep the gate's shape.
+// The model is radar-2: implied value is calibrated from the snapshot itself, never from a
+// protocol name — a per-category mcap/TVL multiple shrunk toward the global median, times 7-day
+// growth, an inverted-U maturity factor, and a chain-breadth bonus. The board ranks all 198
+// genuine pre-token protocols (the 40 watchlist slugs are the floor, not the ceiling), and every
+// row carries a 7-step farm plan with per-chain gas and time costs. Change the model, the page or
+// the plan; keep the gate's shape.
 //
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts --input ../input/snapshot.json
@@ -49,6 +51,18 @@ if (issue !== null) {
   process.stderr.write(`token radar: the model wrote a board the gate refuses: ${issue}\n`);
   process.exit(1);
 }
+
+/** Fail at once, with a plain message, when a file the hand-in needs is not beside this file. */
+function requireFile(path: string): void {
+  if (!existsSync(path)) {
+    process.stderr.write(`token radar: missing ${path}: the entry cannot be handed in without it\n`);
+    process.exit(2);
+  }
+}
+
+// The three dashboard files must be present before any output is written: a board without its
+// page is a silent partial hand-in, and the dossier would still be written.
+for (const name of ['index.html', 'app.css', 'app.js']) requireFile(join(here, 'dashboard', name));
 
 mkdirSync(out, { recursive: true });
 writeFileSync(join(out, 'board.json'), `${JSON.stringify({ rows: board })}\n`);
